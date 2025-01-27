@@ -3,6 +3,7 @@ A file system with directory and file.
 Should be able to search file according to different criteria.
 Criteria can be a AND/OR combination of name matching/size etc.
 '''
+
 from abc import ABC, abstractmethod
 
 # File interface and implementations:
@@ -36,35 +37,35 @@ class Directory(Node):
 # Filter interface and implementations:
 class Criteria(ABC):
     def __init__(self):
-        self.comparators = []
-    
-    def addComparator(self, comparator):
-        self.comparators.append(comparator)
+        self.criteria = []
     
     @abstractmethod
     def judge(self, file):
         pass
 
 class CriteriaAnd(Criteria):
+    def __init__(self, criteria):
+        self.criteria = criteria
+        
     def judge(self, file):
-        for comparator in self.comparators:
-            if not comparator.judge(file):
+        for criterion in self.criteria:
+            if criterion.judge(file):
+                continue
+            else:
                 return False
         return True
         
 class CriteriaOr(Criteria):
+    def __init__(self, criteria):
+        self.criteria = criteria
+        
     def judge(self, file):
-        for comparator in self.comparators:
-            if comparator.judge(file):
+        for criterion in self.criteria:
+            if criterion.judge(file):
                 return True
         return False
-      
-class Comparator(ABC):
-    @abstractmethod
-    def judge(self, file):
-        pass
 
-class NameComparator(Comparator):
+class NameCriterion(Criteria):
     def __init__(self, keyword):
         self.keyWord = keyword
     def judge(self, file):
@@ -72,7 +73,7 @@ class NameComparator(Comparator):
             return True
         return False
 
-class SizeBiggerComparator(Comparator):
+class SizeBiggerCriterion(Criteria):
     def __init__(self, size):
         self.size = size
     def judge(self, file):
@@ -110,12 +111,13 @@ file_l1_f1 = File('file_l1_f1.txt', 3)
 dir_l0.children = [file_l0_f1, dir_l1_d1]
 dir_l1_d1.children = [file_l1_f1]
 
+print('Test_and:')
 system = System(dir_l0)
-nameComparator = NameComparator('txt')
-sizeComparator = SizeBiggerComparator(4)
-criteria = CriteriaAnd()
-criteria.addComparator(nameComparator)
-criteria.addComparator(sizeComparator)
+criteria = CriteriaAnd([NameCriterion('txt'), SizeBiggerCriterion(4)])
 for file in system.searchForFiles(criteria):
     print(file)
-        
+
+print('Test_or:')
+criteria = CriteriaOr([NameCriterion('txt'), SizeBiggerCriterion(4)])
+for file in system.searchForFiles(criteria):
+    print(file)
